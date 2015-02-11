@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+}
+img {
+  width: 100%;
+  margin-bottom: -4px;
+}
+#grid[data-columns]::before {
+  content: '3 .column.size-1of3';
+}
+.column {
+  float: left;
+}
+.size-1of3 {
+  width: 33.33%;
+}
