@@ -1,7 +1,6 @@
 (function() {
   'use strict';
 
-
   //
   // Search Model
   //
@@ -14,26 +13,47 @@
   //
   // Image Model
   //
-  var ImageResult = Backbone.Model.extend({
+  var imageResult = Backbone.Model.extend({
     defaults: {
      urlData: ''
    }
-  });
-
+ });
 
   //
   // Flickr Collection
   //
   var FlickrCollection = Backbone.Collection.extend({
-    model: ImageResult
+    initialize: function(collection, options){
+        this.appModel = options.appModel;
+      },
+
+    url: function (){
+     var searchTerm = this.appModel.get('searchTerm').replace(/ /g, '+');
+     var base = "https://api.flickr.com/services/rest/?method=flickr.photos.search";
+     var end = "&format=json&jsoncallback=?&extras=url_l";
+     var key = "&api_key=7023d47c5cc453af6c2b5b45b5cf1bc4";
+     return base + key + (searchTerm ? "&tags=" + searchTerm : "") + end;
+
+   },
+
+   model: imageResult,
+
+   parse: function(response) {
+        console.log(response);
+       return response.photos;
+
+     }
+
 
   });
+
+
 
   //
   // Etsy Collection
   //
   var EtsyCollection = Backbone.Collection.extend({
-    model: ImageResult,
+    model: imageResult
 
 
   });
@@ -42,22 +62,22 @@
   //Index Page View
   //
   var IndexPageView = Backbone.View.extend({
-    el: 'form',
+    tagName: 'form',
     events: {
       "submit": "submitSearch"
     },
 
     submitSearch: function() {
       event.preventDefault();
-      var searchTerm = $('input').val();
-      console.log(searchTerm);
+      var searchText = $('input').val();
+      var searchTerm = encodeURI(searchText);
 
       router.navigate("results/" + searchTerm, {
         trigger: true
       });
     },
 
-    template: _.template($('[data-template-name=index').text()),
+    template: _.template($('[data-template-name=index]').text()),
 
     render: function() {
       this.$el.html(this.template());
@@ -65,35 +85,23 @@
     }
 
   });
+
+
+
   //
   // Results Page View
   //
   var ResultsPageView = Backbone.View.extend({
-    tagName: 'div',
-    events: {
-      "submit": "selectImage"
-    },
 
-    displayResults: function() {
-      event.preventDefault();
 
-    },
-
-    template: _.template($('[data-template-name=results').text()),
-
-    render: function() {
-      this.$el.html(this.template());
-      return this;
-    }
   });
   //
   // Selected Page View
   //
   var SelectedPageView = Backbone.View.extend({
 
-    selectedPage: function() {
 
-    }
+
   });
 
   //
@@ -108,30 +116,22 @@
     },
 
     initialize: function() {
-      this.searchView = new IndexPageView({
-        collection: this.images
-      });
-      this.resultsView = new ResultsPageView({
-        collection: this.images
-      });
-      this.selectedView = new SelectedPageView({
-        collection: this.images
-      });
-
+      this.appModel = new AppModel();
+      this.indexPage = new IndexPageView({collection: this.listings});
+      this.flickr = new FlickrCollection([], {appModel: this.appModel});
     },
 
     index: function() {
-      this.searchView.render();
-      $('#app').append(this.searchView.el);
-      this.selectedView.render();
-      $('#app').append(this.selectedView.el);
+      this.indexPage.render();
+      $('#app').append(this.indexPage.el);
     },
 
-    results: function() {
-      this.resultsView.render();
-      $('#app').append(this.resultsView.el);
+    results: function(term) {
+      this.appModel.set('searchTerm', term);
+      this.flickr.fetch();
+      console.log(this.flickr.url());
 
-    },
+    }
 
   });
 
