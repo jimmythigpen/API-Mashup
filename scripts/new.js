@@ -13,11 +13,7 @@
   //
   // Image Model
   //
-  var imageResult = Backbone.Model.extend({
-    defaults: {
-     urlData: ''
-   }
- });
+  var imageResult = Backbone.Model.extend({});
 
   //
   // Flickr Collection
@@ -41,18 +37,13 @@
    parse: function(response) {
         console.log(response);
        return response.photos;
-
      }
-
-
   });
 
-
-
   //
-  // Etsy Collection
+  // Giphy Collection
   //
-  var EtsyCollection = Backbone.Collection.extend({
+  var GiphyCollection = Backbone.Collection.extend({
     model: imageResult
 
 
@@ -86,21 +77,40 @@
 
   });
 
-
-
   //
   // Results Page View
   //
   var ResultsPageView = Backbone.View.extend({
+    tagName: 'div',
+    events: {
+      "click": "showImage"
+    },
 
+    initialize: function(){
+          this.listenTo(this.collection, 'sync', this.render);
+          console.log(this.collection);
+        },
+
+  template: _.template($('[data-template-name=results]').text()),
+
+  //   render: function(){
+  //   this.$el.html(this.template());
+  //   var self = this;
+  //    this.collection.each(function(listing){
+  //      self.$el.html('<div>' + listing.get('url_l') + '</div>');
+  //    });
+  //  },
+
+  render: function() {
+    this.$el.html(this.template());
+    return this;
+  },
 
   });
   //
   // Selected Page View
   //
   var SelectedPageView = Backbone.View.extend({
-
-
 
   });
 
@@ -110,23 +120,25 @@
   var AppRouter = Backbone.Router.extend({
     routes: {
       "": "index",
-      "results": "results",
       "selected": "selected",
       "results/:search": "results"
     },
 
     initialize: function() {
       this.appModel = new AppModel();
-      this.indexPage = new IndexPageView({collection: this.listings});
       this.flickr = new FlickrCollection([], {appModel: this.appModel});
+      this.indexPage = new IndexPageView({collection: this.flickr});
+      this.results = new ResultsPageView({collection: this.indexPage});
     },
 
     index: function() {
       this.indexPage.render();
-      $('#app').append(this.indexPage.el);
+      $('#app').html(this.indexPage.el);
     },
 
     results: function(term) {
+      this.results.render();
+      $('#app').html(this.results.el);
       this.appModel.set('searchTerm', term);
       this.flickr.fetch();
       console.log(this.flickr.url());
