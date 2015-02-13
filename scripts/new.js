@@ -13,7 +13,11 @@
   //
   // Image Model
   //
-  var ImageModel = Backbone.Model.extend({});
+  var ImageModel = Backbone.Model.extend({
+    defaults: {
+      flickrURL: ''
+    }
+  });
 
   //
   // Flickr Collection
@@ -35,8 +39,7 @@
    model: ImageModel,
 
    parse: function(response) {
-      // console.log(_.pluck(response.photos.photo, 'url_l'));
-      return response.photos;
+      return _.pluck(response.photos.photo, 'url_l');
      }
   });
 
@@ -94,15 +97,12 @@
   template: _.template($('[data-template-name=results]').text()),
 
   render: function() {
-    this.$el.html(this.template());
-    return this;
-  },
-
-  //   var self = this;
-  //    this.collection.each(function(image){
-  //      self.$el.html('<div>' + image.get('url_l') + '</div>');
-  //    });
-  //  },
+    var self = this;
+       this.collection.each(function(image){
+         self.$el.html('<div>' + image.get('url_l') + '</div>');
+       });
+     },
+     // return this
 
   });
   //
@@ -136,12 +136,13 @@
       $('#app').html(this.indexPage.el);
     },
 
-    results: function(term) {
+    results: function(term, url) {
       this.results.render();
       $('#app').html(this.results.el);
       this.appModel.set('searchTerm', term);
       this.flickr.fetch();
       // console.log(this.flickr.url());
+      this.imageModel.set('flickrURL', url);
 
     }
 
