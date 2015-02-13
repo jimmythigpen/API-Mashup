@@ -6,18 +6,10 @@
   //
   var AppModel = Backbone.Model.extend({
    defaults: {
-     searchTerm: ''
+     searchTerm: '',
+     imageURL: ''
    }
  });
-
-  //
-  // Image Model
-  //
-  var ImageModel = Backbone.Model.extend({
-    defaults: {
-      flickrURL: ''
-    }
-  });
 
   //
   // Flickr Collection
@@ -36,10 +28,9 @@
 
    },
 
-   model: ImageModel,
-
    parse: function(response) {
-      return _.pluck(response.photos.photo, 'url_l');
+    //  console.log(_.pluck(response.photos.photo, 'url_l'));
+      return (response.photos.photo);
      }
   });
 
@@ -47,7 +38,6 @@
   // Giphy Collection
   //
   var GiphyCollection = Backbone.Collection.extend({
-    model: ImageModel
 
 
   });
@@ -91,16 +81,17 @@
 
   initialize: function(){
     this.listenTo(this.collection, 'sync', this.render);
-    console.log(this.collection);
+    // console.log(this.collection);
   },
 
   template: _.template($('[data-template-name=results]').text()),
 
   render: function() {
     var self = this;
-       this.collection.each(function(image){
-         self.$el.html('<div>' + image.get('url_l') + '</div>');
-       });
+    console.log(this.collection.each(function(image){
+       self.$el.append('<div>' + '<img src=' + image.get('url_l') + '/>' + '</div>');
+     }));
+
      },
      // return this
 
@@ -124,10 +115,9 @@
 
     initialize: function() {
       this.appModel = new AppModel();
-      this.imageModel = new ImageModel();
       this.flickr = new FlickrCollection([], {appModel: this.appModel});
       this.indexPage = new IndexPageView();
-      this.results = new ResultsPageView({collection: this.indexPage});
+      this.results = new ResultsPageView({collection: this.flickr});
       // console.log(this.results);
     },
 
@@ -136,13 +126,13 @@
       $('#app').html(this.indexPage.el);
     },
 
-    results: function(term, url) {
+    results: function(search) {
       this.results.render();
       $('#app').html(this.results.el);
-      this.appModel.set('searchTerm', term);
+      this.appModel.set('searchTerm', search);
+      // console.log(this.appModel.set('searchTerm', search));
       this.flickr.fetch();
       // console.log(this.flickr.url());
-      this.imageModel.set('flickrURL', url);
 
     }
 
