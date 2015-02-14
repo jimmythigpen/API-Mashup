@@ -7,7 +7,8 @@
   var AppModel = Backbone.Model.extend({
    defaults: {
      searchTerm: '',
-     imageURL: ''
+     imageURL: '',
+     imageLink: ''
    }
  });
 
@@ -25,10 +26,6 @@
      var end = "&format=json&jsoncallback=?&extras=url_l&per_page=25";
      var key = "&api_key=7023d47c5cc453af6c2b5b45b5cf1bc4";
      return base + key + (searchTerm ? "&tags=" + searchTerm : "") + end;
-
-
-
-     //&api_key=6b66408c87123c5fcc6ca82b7a845150&tags=cats&extras=url_l&per_page=5&format=json&nojsoncallback=1&auth_token=72157650400923347-421e6769bef9502b&api_sig=3940b522536ccc77d5dae4ec49e058b8
    },
 
    parse: function(response) {
@@ -104,10 +101,26 @@
     var self = this;
     this.collection.each(function(image){
       if (image.get('url_l') !== undefined){
-       self.$el.append('<div>' + '<img src=' + image.get('url_l') + '/>' + '</div>');
+       self.$el.append('<div>' + '<a href=' + image.get('url_l') + '>' + '<img src=' + image.get('url_l') + '/>' + '</a>' + '</div>');
        }
      });
     },
+
+  showImage: function() {
+    event.preventDefault();
+    var selectedURL = $('div').val();
+
+    router.navigate("selected" + selectedURL, {
+      trigger: true
+    });
+  },
+
+  templateSelected: _.template($('[data-template-name=selected]').text()),
+
+  renderSelected: function() {
+    this.$el.html(this.template());
+    return this;
+  }
 
   });
   //
@@ -130,7 +143,8 @@
     this.collection.each(function(image){
       // console.log(_.pluck(image.get('images'), 'url')[12]);
       if (_.pluck(image.get('images'), 'url')[12] !== undefined){
-       self.$el.append('<div>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</div>');
+      //  self.$el.append('<div>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</div>');
+       self.$el.append('<div>' + '<a href=' + _.pluck(image.get('images'), 'url')[12] + '>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</a>' + '</div>');
        }
     });
   },
@@ -149,8 +163,8 @@
   var AppRouter = Backbone.Router.extend({
     routes: {
       "": "index",
-      "selected": "selected",
-      "results/:search": "results"
+      "results/:search": "results",
+      "selected": "selected"
     },
 
     initialize: function() {
