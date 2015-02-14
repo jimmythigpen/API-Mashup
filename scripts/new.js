@@ -74,7 +74,7 @@
   // Results Page View
   //
   var ResultsPageView = Backbone.View.extend({
-    tagName: 'div',
+    tagName: 'div class="column size-1of2"',
     events: {
       "click": "showImage"
     },
@@ -88,12 +88,12 @@
 
   render: function() {
     var self = this;
-    console.log(this.collection.each(function(image){
+    this.collection.each(function(image){
+      if (image.get('url_l') !== undefined){
        self.$el.append('<div>' + '<img src=' + image.get('url_l') + '/>' + '</div>');
-     }));
-
-     },
-     // return this
+       }
+     });
+    },
 
   });
   //
@@ -118,7 +118,6 @@
       this.flickr = new FlickrCollection([], {appModel: this.appModel});
       this.indexPage = new IndexPageView();
       this.results = new ResultsPageView({collection: this.flickr});
-      // console.log(this.results);
     },
 
     index: function() {
@@ -130,9 +129,7 @@
       this.results.render();
       $('#app').html(this.results.el);
       this.appModel.set('searchTerm', search);
-      // console.log(this.appModel.set('searchTerm', search));
       this.flickr.fetch();
-      // console.log(this.flickr.url());
 
     }
 
