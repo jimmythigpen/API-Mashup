@@ -22,14 +22,16 @@
     url: function (){
      var searchTerm = this.appModel.get('searchTerm').replace(/ /g, '+');
      var base = "https://api.flickr.com/services/rest/?method=flickr.photos.search";
-     var end = "&format=json&jsoncallback=?&extras=url_l";
+     var end = "&format=json&jsoncallback=?&extras=url_l&per_page=25";
      var key = "&api_key=7023d47c5cc453af6c2b5b45b5cf1bc4";
      return base + key + (searchTerm ? "&tags=" + searchTerm : "") + end;
 
+
+
+     //&api_key=6b66408c87123c5fcc6ca82b7a845150&tags=cats&extras=url_l&per_page=5&format=json&nojsoncallback=1&auth_token=72157650400923347-421e6769bef9502b&api_sig=3940b522536ccc77d5dae4ec49e058b8
    },
 
    parse: function(response) {
-    //  console.log(_.pluck(response.photos.photo, 'url_l'));
       return (response.photos.photo);
      }
   });
@@ -38,9 +40,22 @@
   // Giphy Collection
   //
   var GiphyCollection = Backbone.Collection.extend({
+    initialize: function(collection, options){
+        this.appModel = options.appModel;
+      },
 
+      url: function (){
+       var searchTerm = this.appModel.get('searchTerm').replace(/ /g, '+');
+       var base = "http://api.giphy.com/v1/gifs/search?q=";
+       var key = "&api_key=dc6zaTOxFJmzC";
+       return base + (searchTerm ? searchTerm : "") + key;
+     },
 
-  });
+     parse: function(response) {
+      //  console.log(response.data);
+       return response.data;
+       }
+    });
 
   //
   //Index Page View
@@ -71,7 +86,7 @@
   });
 
   //
-  // Results Page View
+  // Results Page Flickr View
   //
   var ResultsPageView = Backbone.View.extend({
     tagName: 'div class="column size-1of2"',
@@ -81,7 +96,6 @@
 
   initialize: function(){
     this.listenTo(this.collection, 'sync', this.render);
-    // console.log(this.collection);
   },
 
   template: _.template($('[data-template-name=results]').text()),
@@ -94,6 +108,32 @@
        }
      });
     },
+
+  });
+  //
+  // Results Page Giphy View
+  //
+  var ResultsPageView2 = Backbone.View.extend({
+    tagName: 'div class="column size-1of2"',
+    events: {
+      "click": "showImage"
+    },
+
+  initialize: function(){
+    this.listenTo(this.collection, 'sync', this.render);
+  },
+
+  template: _.template($('[data-template-name=results]').text()),
+
+  render: function() {
+    var self = this;
+    this.collection.each(function(image){
+      // console.log(_.pluck(image.get('images'), 'url')[12]);
+      if (_.pluck(image.get('images'), 'url')[12] !== undefined){
+       self.$el.append('<div>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</div>');
+       }
+    });
+  },
 
   });
   //
@@ -116,8 +156,10 @@
     initialize: function() {
       this.appModel = new AppModel();
       this.flickr = new FlickrCollection([], {appModel: this.appModel});
+      this.giphy = new GiphyCollection([], {appModel: this.appModel});
       this.indexPage = new IndexPageView();
       this.results = new ResultsPageView({collection: this.flickr});
+      this.results2 = new ResultsPageView2({collection: this.giphy});
     },
 
     index: function() {
@@ -127,10 +169,12 @@
 
     results: function(search) {
       this.results.render();
+      this.results2.render();
       $('#app').html(this.results.el);
+      $('#app').append(this.results2.el);
       this.appModel.set('searchTerm', search);
       this.flickr.fetch();
-
+      this.giphy.fetch();
     }
 
   });
