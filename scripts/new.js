@@ -8,7 +8,6 @@
    defaults: {
      searchTerm: '',
      imageURL: '',
-     imageLink: ''
    }
  });
 
@@ -88,7 +87,7 @@
   var ResultsPageView = Backbone.View.extend({
     tagName: 'div class="column size-1of2"',
     events: {
-      "click": "showImage"
+      "click": "selectImage"
     },
 
   initialize: function(){
@@ -101,26 +100,20 @@
     var self = this;
     this.collection.each(function(image){
       if (image.get('url_l') !== undefined){
-       self.$el.append('<div>' + '<a href=' + image.get('url_l') + '>' + '<img src=' + image.get('url_l') + '/>' + '</a>' + '</div>');
+       self.$el.append('<div>' + '<a class="selectedURL" href=' + image.get('url_l') + '>' + '<img src=' + image.get('url_l') + '/>' + '</a>' + '</div>');
        }
      });
     },
 
-  showImage: function() {
+  selectImage: function() {
     event.preventDefault();
-    var selectedURL = $('div').val();
+    var imageURL = $('.selectedURL').attr('href');
+    var imageURLtemp = 'Jimmy';
 
-    router.navigate("selected" + selectedURL, {
+    router.navigate("selected/" + imageURLtemp, {
       trigger: true
     });
   },
-
-  templateSelected: _.template($('[data-template-name=selected]').text()),
-
-  renderSelected: function() {
-    this.$el.html(this.template());
-    return this;
-  }
 
   });
   //
@@ -155,6 +148,19 @@
   //
   var SelectedPageView = Backbone.View.extend({
 
+    initialize: function(collection, options){
+        this.appModel = options.appModel;
+      },
+
+    templateSelected: _.template($('[data-template-name=selected]').text()),
+
+    renderSelected: function() {
+      var imageURL = this.appModel.get('imageURL');
+      console.log(imageURL);
+      this.$el.html(this.templateSelected());
+      return this;
+    }
+
   });
 
   //
@@ -164,7 +170,7 @@
     routes: {
       "": "index",
       "results/:search": "results",
-      "selected": "selected"
+      "selected/:imageURL": "selected"
     },
 
     initialize: function() {
@@ -174,6 +180,7 @@
       this.indexPage = new IndexPageView();
       this.results = new ResultsPageView({collection: this.flickr});
       this.results2 = new ResultsPageView2({collection: this.giphy});
+      this.selectedPage = new SelectedPageView([], {appModel: this.appModel});
     },
 
     index: function() {
@@ -189,6 +196,14 @@
       this.appModel.set('searchTerm', search);
       this.flickr.fetch();
       this.giphy.fetch();
+    },
+
+    selected: function(URL) {
+      console.log('Jimmy is cool');
+      this.selectedPage.renderSelected();
+      $('#app').html(this.selectedPage.el);
+      this.appModel.set('imageURL', URL);
+
     }
 
   });
