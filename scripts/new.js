@@ -110,7 +110,7 @@
     var imageURL = $('.selectedURL').attr('href');
     var imageURLtemp = 'Jimmy';
 
-    router.navigate("selected/" + imageURLtemp, {
+    router.navigate("selected/" + imageURL, {
       trigger: true
     });
   },
@@ -170,7 +170,7 @@
     routes: {
       "": "index",
       "results/:search": "results",
-      "selected/:imageURL": "selected"
+      "selected/:URL": "selected"
     },
 
     initialize: function() {
@@ -200,9 +200,10 @@
 
     selected: function(URL) {
       console.log('Jimmy is cool');
+      this.appModel.set('imageURL', URL);
       this.selectedPage.renderSelected();
       $('#app').html(this.selectedPage.el);
-      this.appModel.set('imageURL', URL);
+
 
     }
 
