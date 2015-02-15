@@ -48,7 +48,6 @@
      },
 
      parse: function(response) {
-      //  console.log(response.data);
        return response.data;
        }
     });
@@ -105,15 +104,15 @@
      });
     },
 
-  selectImage: function() {
-    event.preventDefault();
-    var imageURL = $('.selectedURL').attr('href');
-    var imageURLtemp = 'Jimmy';
-
-    router.navigate("selected/" + imageURL, {
-      trigger: true
-    });
-  },
+  // selectImage: function(event) {
+  //   event.preventDefault();
+  //   var imageURL = $('.selectedURL').attr('href');
+  //   // var imageURLtemp = 'Jimmy';
+  //
+  //   router.navigate("selected/" + imageURL, {
+  //     trigger: true
+  //   });
+  // },
 
   });
   //
@@ -122,7 +121,7 @@
   var ResultsPageView2 = Backbone.View.extend({
     tagName: 'div class="column size-1of2"',
     events: {
-      "click": "showImage"
+      "click": "selectImage"
     },
 
   initialize: function(){
@@ -137,10 +136,19 @@
       // console.log(_.pluck(image.get('images'), 'url')[12]);
       if (_.pluck(image.get('images'), 'url')[12] !== undefined){
       //  self.$el.append('<div>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</div>');
-       self.$el.append('<div>' + '<a href=' + _.pluck(image.get('images'), 'url')[12] + '>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</a>' + '</div>');
+       self.$el.append('<div>' + '<a class="selectedURL" href=' + _.pluck(image.get('images'), 'url')[12] + '>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</a>' + '</div>');
        }
     });
   },
+
+  // selectImage: function(event) {
+  //   event.preventDefault();
+  //   var imageURL = $('.selectedURL').attr('href');
+  //   // var imageURLtemp = 'Jimmy';
+  //   router.navigate("selected/" + imageURL, {
+  //     trigger: true
+  //   });
+  // },
 
   });
   //
@@ -156,7 +164,7 @@
 
     renderSelected: function() {
       var imageURL = this.appModel.get('imageURL');
-      console.log(imageURL);
+      // console.log(imageURL);
       this.$el.html(this.templateSelected());
       return this;
     }
@@ -201,6 +209,7 @@
     selected: function(URL) {
       console.log('Jimmy is cool');
       this.appModel.set('imageURL', URL);
+      console.log(URL);
       this.selectedPage.renderSelected();
       $('#app').html(this.selectedPage.el);
 

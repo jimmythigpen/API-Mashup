@@ -1,63 +1,78 @@
 (function() {
   'use strict';
 
-
   //
   // Search Model
   //
   var AppModel = Backbone.Model.extend({
    defaults: {
-     searchTerm: ''
+     searchTerm: '',
+     imageURL: '',
    }
  });
-
-  //
-  // Image Model
-  //
-  var ImageResult = Backbone.Model.extend({
-    defaults: {
-     urlData: ''
-   }
-  });
-
 
   //
   // Flickr Collection
   //
   var FlickrCollection = Backbone.Collection.extend({
-    model: ImageResult
+    initialize: function(collection, options){
+        this.appModel = options.appModel;
+      },
 
+    url: function (){
+     var searchTerm = this.appModel.get('searchTerm').replace(/ /g, '+');
+     var base = "https://api.flickr.com/services/rest/?method=flickr.photos.search";
+     var end = "&format=json&jsoncallback=?&extras=url_l&per_page=25";
+     var key = "&api_key=7023d47c5cc453af6c2b5b45b5cf1bc4";
+     return base + key + (searchTerm ? "&tags=" + searchTerm : "") + end;
+   },
+
+   parse: function(response) {
+      return (response.photos.photo);
+     }
   });
 
   //
-  // Etsy Collection
+  // Giphy Collection
   //
-  var EtsyCollection = Backbone.Collection.extend({
-    model: ImageResult,
+  var GiphyCollection = Backbone.Collection.extend({
+    initialize: function(collection, options){
+        this.appModel = options.appModel;
+      },
 
+      url: function (){
+       var searchTerm = this.appModel.get('searchTerm').replace(/ /g, '+');
+       var base = "http://api.giphy.com/v1/gifs/search?q=";
+       var key = "&api_key=dc6zaTOxFJmzC";
+       return base + (searchTerm ? searchTerm : "") + key;
+     },
 
-  });
+     parse: function(response) {
+      //  console.log(response.data);
+       return response.data;
+       }
+    });
 
   //
   //Index Page View
   //
   var IndexPageView = Backbone.View.extend({
-    el: 'form',
+    tagName: 'form',
     events: {
       "submit": "submitSearch"
     },
 
     submitSearch: function() {
       event.preventDefault();
-      var searchTerm = $('input').val();
-      console.log(searchTerm);
+      var searchText = $('input').val();
+      var searchTerm = encodeURI(searchText);
 
       router.navigate("results/" + searchTerm, {
         trigger: true
       });
     },
 
-    template: _.template($('[data-template-name=index').text()),
+    template: _.template($('[data-template-name=index]').text()),
 
     render: function() {
       this.$el.html(this.template());
@@ -65,35 +80,87 @@
     }
 
   });
+
   //
-  // Results Page View
+  // Results Page Flickr View
   //
   var ResultsPageView = Backbone.View.extend({
-    tagName: 'div',
+    tagName: 'div class="column size-1of2"',
     events: {
-      "submit": "selectImage"
+      "click": "selectImage"
     },
 
-    displayResults: function() {
-      event.preventDefault();
+  initialize: function(){
+    this.listenTo(this.collection, 'sync', this.render);
+  },
 
+  template: _.template($('[data-template-name=results]').text()),
+
+  render: function() {
+    var self = this;
+    this.collection.each(function(image){
+      if (image.get('url_l') !== undefined){
+       self.$el.append('<div>' + '<a class="selectedURL" href=' + image.get('url_l') + '>' + '<img src=' + image.get('url_l') + '/>' + '</a>' + '</div>');
+       }
+     });
     },
 
-    template: _.template($('[data-template-name=results').text()),
+  selectImage: function() {
+    event.preventDefault();
+    var imageURL = $('.selectedURL').attr('href');
+    var imageURLtemp = 'Jimmy';
 
-    render: function() {
-      this.$el.html(this.template());
-      return this;
-    }
+    router.navigate("selected/" + imageURLtemp, {
+      trigger: true
+    });
+  },
+
+  });
+  //
+  // Results Page Giphy View
+  //
+  var ResultsPageView2 = Backbone.View.extend({
+    tagName: 'div class="column size-1of2"',
+    events: {
+      "click": "showImage"
+    },
+
+  initialize: function(){
+    this.listenTo(this.collection, 'sync', this.render);
+  },
+
+  template: _.template($('[data-template-name=results]').text()),
+
+  render: function() {
+    var self = this;
+    this.collection.each(function(image){
+      // console.log(_.pluck(image.get('images'), 'url')[12]);
+      if (_.pluck(image.get('images'), 'url')[12] !== undefined){
+      //  self.$el.append('<div>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</div>');
+       self.$el.append('<div>' + '<a href=' + _.pluck(image.get('images'), 'url')[12] + '>' + '<img src=' + _.pluck(image.get('images'), 'url')[12] + '>' + '</a>' + '</div>');
+       }
+    });
+  },
+
   });
   //
   // Selected Page View
   //
   var SelectedPageView = Backbone.View.extend({
 
-    selectedPage: function() {
+    initialize: function(collection, options){
+        this.appModel = options.appModel;
+      },
 
+    templateSelected: _.template($('[data-template-name=selected]').text()),
+
+    renderSelected: function() {
+      var imageURL = this.appModel.get('imageURL');
+      console.log(imageURL);
+      this.$el.html(this.templateSelected());
+      return this;
     }
+
   });
 
   //
@@ -102,36 +169,42 @@
   var AppRouter = Backbone.Router.extend({
     routes: {
       "": "index",
-      "results": "results",
-      "selected": "selected",
-      "results/:search": "results"
+      "results/:search": "results",
+      "selected/:imageURL": "selected"
     },
 
     initialize: function() {
-      this.searchView = new IndexPageView({
-        collection: this.images
-      });
-      this.resultsView = new ResultsPageView({
-        collection: this.images
-      });
-      this.selectedView = new SelectedPageView({
-        collection: this.images
-      });
-
+      this.appModel = new AppModel();
+      this.flickr = new FlickrCollection([], {appModel: this.appModel});
+      this.giphy = new GiphyCollection([], {appModel: this.appModel});
+      this.indexPage = new IndexPageView();
+      this.results = new ResultsPageView({collection: this.flickr});
+      this.results2 = new ResultsPageView2({collection: this.giphy});
+      this.selectedPage = new SelectedPageView([], {appModel: this.appModel});
     },
 
     index: function() {
-      this.searchView.render();
-      $('#app').append(this.searchView.el);
-      this.selectedView.render();
-      $('#app').append(this.selectedView.el);
+      this.indexPage.render();
+      $('#app').html(this.indexPage.el);
     },
 
-    results: function() {
-      this.resultsView.render();
-      $('#app').append(this.resultsView.el);
-
+    results: function(search) {
+      this.results.render();
+      this.results2.render();
+      $('#app').html(this.results.el);
+      $('#app').append(this.results2.el);
+      this.appModel.set('searchTerm', search);
+      this.flickr.fetch();
+      this.giphy.fetch();
     },
+
+    selected: function(URL) {
+      console.log('Jimmy is cool');
+      this.selectedPage.renderSelected();
+      $('#app').html(this.selectedPage.el);
+      this.appModel.set('imageURL', URL);
+
+    }
 
   });
 
